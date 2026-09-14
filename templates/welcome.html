@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>FORGE3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --bg0:#1a1a1a; --bg1:#212121; --bg2:#282828; --bg3:#303030;
+      --border:#3c3c3c; --text0:#e0e0e0; --text1:#a0a0a0; --text2:#606060;
+      --accent:#4d9fff; --accent2:#1a3a5c;
+    }
+    body.light {
+      --bg0:#b8b8b8; --bg1:#c2c2c2; --bg2:#cccccc; --bg3:#d6d6d6;
+      --border:#a4a4a4; --text0:#1a1a1a; --text1:#484848; --text2:#888888;
+      --accent:#1a6fd4; --accent2:#cce0ff;
+    }
+    body {
+      font-family:'IBM Plex Mono',monospace;
+      background:var(--bg0); color:var(--text0);
+      width:100vw; height:100vh;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      gap:0;
+    }
+
+    .logo {
+      font-size:28px; font-weight:600;
+      letter-spacing:.2em; color:var(--accent);
+      margin-bottom:6px;
+    }
+    .tagline {
+      font-size:11px; color:var(--text2);
+      letter-spacing:.12em; margin-bottom:48px;
+    }
+
+    .card {
+      background:var(--bg1);
+      border:1px solid var(--border);
+      border-radius:6px;
+      padding:24px;
+      width:400px;
+    }
+
+    .card-title {
+      font-size:10px; font-weight:600;
+      letter-spacing:.12em; color:var(--text2);
+      text-transform:uppercase; margin-bottom:16px;
+    }
+
+    /* new project form */
+    .input-row {
+      display:flex; gap:8px; margin-bottom:16px;
+    }
+    .forge-input {
+      flex:1; height:34px;
+      background:var(--bg0); border:1px solid var(--border);
+      border-radius:4px; color:var(--text0);
+      font-family:inherit; font-size:12px;
+      padding:0 12px; outline:none;
+      transition:border-color .15s;
+    }
+    .forge-input:focus { border-color:var(--accent); }
+
+    .forge-btn {
+      height:34px; padding:0 16px;
+      background:var(--accent2); border:1px solid var(--accent);
+      border-radius:4px; color:var(--accent);
+      font-family:inherit; font-size:11px; font-weight:600;
+      cursor:pointer; transition:all .15s; white-space:nowrap;
+    }
+    .forge-btn:hover { background:var(--accent); color:#fff; }
+
+    .error { font-size:10px; color:#e05050; margin-top:-10px; margin-bottom:10px; min-height:14px; }
+
+    /* project list */
+    .divider {
+      border:none; border-top:1px solid var(--border);
+      margin:16px 0;
+    }
+
+    .proj-list { display:flex; flex-direction:column; gap:4px; }
+
+    .proj-row {
+      display:flex; align-items:center;
+      height:36px; padding:0 10px;
+      border:1px solid var(--border); border-radius:4px;
+      cursor:pointer; background:var(--bg2);
+      transition:all .12s;
+      text-decoration:none;
+    }
+    .proj-row:hover { border-color:var(--accent); background:var(--bg3); }
+
+    .proj-icon {
+      width:20px; height:20px; border-radius:3px;
+      background:var(--accent2); border:1px solid var(--accent);
+      display:flex; align-items:center; justify-content:center;
+      font-size:10px; color:var(--accent); margin-right:10px; flex-shrink:0;
+    }
+    .proj-name { flex:1; font-size:11px; color:var(--text0); }
+    .proj-date { font-size:9px; color:var(--text2); }
+    .proj-del {
+      width:20px; height:20px; background:transparent;
+      border:none; cursor:pointer; color:var(--text2);
+      font-size:12px; display:flex; align-items:center;
+      justify-content:center; transition:color .12s; margin-left:6px;
+    }
+    .proj-del:hover { color:#e05050; }
+
+    .empty { font-size:10px; color:var(--text2); padding:8px 2px; font-style:italic; }
+
+    #theme-btn {
+      position:fixed; top:16px; right:20px;
+      width:34px; height:28px; cursor:pointer;
+      background:var(--bg1); border:1px solid var(--border);
+      border-radius:4px; color:var(--text1); font-size:13px;
+      transition:all .15s;
+    }
+    #theme-btn:hover { border-color:var(--accent); color:var(--accent); }
+  </style>
+</head>
+<body>
+<script>
+  // Apply the saved theme before anything renders; the workspace uses the
+  // same "forge-theme" key, so the choice carries into every project.
+  if (localStorage.getItem('forge-theme') === 'light') document.body.classList.add('light');
+</script>
+<button id="theme-btn" onclick="toggleTheme()" title="Toggle light / dark theme">&#9790;</button>
+
+<a id="back-link" href="../" style="display:none;position:fixed;top:16px;left:20px;font-size:11px;color:var(--text1);text-decoration:none;letter-spacing:.06em;border:1px solid var(--border);border-radius:4px;padding:6px 12px;background:var(--bg1);transition:all .15s"
+   onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+   onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text1)'">&larr; Back to project page</a>
+
+<div class="logo">FORGE3D</div>
+<div class="tagline">3D workspace &middot; any language &middot; any project</div>
+
+<div class="card">
+  <div class="card-title">New Project</div>
+  <div class="input-row">
+    <input class="forge-input" id="proj-name" placeholder="Project name" spellcheck="false"
+      onkeydown="if(event.key==='Enter') createProject()"/>
+    <button class="forge-btn" onclick="createProject()">Create</button>
+  </div>
+  <div class="error" id="create-error"></div>
+
+  <hr class="divider"/>
+
+  <div class="card-title">Open Project</div>
+  <div class="proj-list" id="proj-list">
+    <div class="empty">No projects yet</div>
+  </div>
+</div>
+
+<script>
+async function loadProjects() {
+  const res  = await fetch('api/projects');
+  const data = await res.json();
+  const list = document.getElementById('proj-list');
+  if (!data.projects.length) {
+    list.innerHTML = '<div class="empty">No projects yet</div>';
+    return;
+  }
+  list.innerHTML = data.projects.map(p => `
+    <div class="proj-row" onclick="openProject('${p.id}')">
+      <div class="proj-icon">F</div>
+      <span class="proj-name">${p.name}</span>
+      <span class="proj-date">${p.created.slice(0,10)}</span>
+      ${p.protected
+        ? '<span class="proj-del" title="Sample project" style="cursor:default;opacity:.35">&#9733;</span>'
+        : `<button class="proj-del" onclick="event.stopPropagation();deleteProject('${p.id}')" title="Delete">&#10005;</button>`}
+    </div>
+  `).join('');
+}
+
+async function createProject() {
+  const name = document.getElementById('proj-name').value.trim();
+  const err  = document.getElementById('create-error');
+  const btn  = document.querySelector('.forge-btn');
+  if (!name) { err.textContent = 'Enter a project name'; return; }
+  btn.textContent = 'Creating...';
+  btn.disabled = true;
+  try {
+    const res  = await fetch('api/projects/create', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+    if (!data.ok) { err.textContent = data.error; btn.textContent='Create'; btn.disabled=false; return; }
+    // redirect immediately
+    window.location.replace(`project/${data.id}`);
+  } catch(e) {
+    err.textContent = 'Server error';
+    btn.textContent = 'Create';
+    btn.disabled = false;
+  }
+}
+
+async function deleteProject(id) {
+  if (!confirm('Delete this project?')) return;
+  await fetch(`api/projects/${id}`, { method:'DELETE' });
+  loadProjects();
+}
+
+function openProject(id) { window.location.href = `project/${id}`; }
+
+// Show the back-to-project-page link only when hosted under a subpath
+// (e.g. ahmednassem.com/projects/forge3d/app/), not when running locally at /.
+if (location.pathname !== '/') document.getElementById('back-link').style.display = 'block';
+
+// ── theme ──
+function _themeGlyph() {
+  document.getElementById('theme-btn').innerHTML =
+    document.body.classList.contains('light') ? '&#9788;' : '&#9790;';
+}
+function toggleTheme() {
+  document.body.classList.toggle('light');
+  localStorage.setItem('forge-theme',
+    document.body.classList.contains('light') ? 'light' : 'dark');
+  _themeGlyph();
+}
+_themeGlyph();
+
+loadProjects();
+</script>
+</body>
+</html>

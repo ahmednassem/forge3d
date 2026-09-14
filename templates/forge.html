@@ -1,0 +1,249 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FORGE3D &mdash; __PROJECT_NAME__</title>
+  <link rel="stylesheet" href="../static/Style.css"/>
+  <script>
+    const FORGE_PROJECT_ID   = "__PROJECT_ID__";
+    const FORGE_PROJECT_NAME = "__PROJECT_NAME__";
+    // Show the back-to-project-page arrow only when hosted under a subpath
+    // (locally the editor lives at /project/<id> :  just 2 path segments).
+    window.addEventListener('DOMContentLoaded', () => {
+      if (location.pathname.split('/').filter(Boolean).length > 2)
+        document.getElementById('mb-back').style.display = '';
+    });
+  </script>
+</head>
+<body>
+<script>
+  // Same "forge-theme" key as the welcome page :  theme carries across pages.
+  if (localStorage.getItem('forge-theme') === 'light') document.body.classList.add('light');
+</script>
+
+<div id="modebar">
+  <a class="mb-home" id="mb-back" href="../../" title="Back to project page" style="display:none">&larr;</a>
+  <a class="mb-home" href="../" title="All projects">FORGE3D</a>
+  <div class="mb-sep"></div>
+  <span class="mb-project">__PROJECT_NAME__</span>
+  <div class="mb-sep"></div>
+  <div id="mode-tabs"></div>
+  <button class="mb-add-mode" onclick="FORGE.promptNewMode()" title="Add mode">+</button>
+  <button class="mb-save" id="mb-save" onclick="FORGE.saveScene()"
+          title="Save scene: positions, colors and animation keyframes">SAVE</button>
+  <div class="mb-gap"></div>
+  <span class="mb-label">THEME</span>
+  <button id="theme-toggle" onclick="FORGE.toggleTheme()"></button>
+</div>
+
+<div id="main">
+
+  <div id="left-panel">
+    <div id="panel-content">
+
+      <!-- 1. Camera + Presets + Overlays :  injected by mode.js -->
+      <div id="mode-panel"></div>
+
+      <!-- 2. OUTLINER -->
+      <div id="outliner" class="ws-only">
+        <div class="outliner-head">
+          <span>OUTLINER</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            <span id="outliner-count" class="outliner-count">0</span>
+            <button class="outliner-add" onclick="FORGE.promptNewObject()" title="Add object">+</button>
+            <button class="outliner-del" onclick="FORGE.deleteSelected()" title="Delete">&#10005;</button>
+          </div>
+        </div>
+        <div id="obj-popup" class="obj-popup" style="display:none">
+          <input id="obj-name-input" class="obj-name-input" placeholder="ObjectName" spellcheck="false"/>
+          <div class="obj-prim-grid" id="obj-prim-grid">
+            <button class="obj-prim active" data-prim="box"      onclick="FORGE.pickPrimitive(this)">Box</button>
+            <button class="obj-prim" data-prim="sphere"   onclick="FORGE.pickPrimitive(this)">Sphere</button>
+            <button class="obj-prim" data-prim="cylinder" onclick="FORGE.pickPrimitive(this)">Cylinder</button>
+            <button class="obj-prim" data-prim="cone"     onclick="FORGE.pickPrimitive(this)">Cone</button>
+            <button class="obj-prim" data-prim="plane"    onclick="FORGE.pickPrimitive(this)">Plane</button>
+            <button class="obj-prim" data-prim="torus"    onclick="FORGE.pickPrimitive(this)">Torus</button>
+            <button class="obj-prim" data-prim="empty"    onclick="FORGE.pickPrimitive(this)" title="Empty script: write your own Three.js code">Empty</button>
+          </div>
+          <div class="obj-color-row">
+            <span>Color</span>
+            <input type="color" id="obj-color-input" value="#4d9fff" title="Object color"/>
+          </div>
+          <div id="obj-upload-row" style="display:none;margin-top:6px">
+            <button class="obj-prim" style="width:100%" onclick="FORGE.uploadObjectFile()">Upload your own .js file&#8230;</button>
+            <input type="file" id="obj-file-input" accept=".js" style="display:none"/>
+          </div>
+          <div style="display:flex;gap:4px;margin-top:6px">
+            <button class="obj-popup-btn confirm" onclick="FORGE.createObject()">Create</button>
+            <button class="obj-popup-btn cancel"  onclick="FORGE.closeObjPopup()">Cancel</button>
+          </div>
+          <div id="obj-popup-error" class="obj-popup-error"></div>
+        </div>
+        <div id="outliner-list"><div class="obj-empty">No objects</div></div>
+        <div id="obj-actions" class="obj-actions">
+          <div class="prow" style="margin-bottom:4px">
+            <span>Selected</span>
+            <span class="val" id="obj-selected-name">&#8212;</span>
+          </div>
+          <button class="sbtn" onclick="FORGE.focusSelected()"><span class="sicon">&#9678;</span>Focus</button>
+          <button class="sbtn" onclick="FORGE.resetTransform()"><span class="sicon">&#8634;</span>Reset Transform</button>
+          <button class="sbtn" onclick="FORGE.duplicateSelected()"><span class="sicon">&#10697;</span>Duplicate</button>
+        </div>
+      </div>
+
+      <!-- 3. AXES -->
+      <div class="pblock ws-only">
+        <div class="phead" onclick="FORGE.toggleBlock(this)"><span>Axes</span><span class="parrow">&#9662;</span></div>
+        <div class="pbody">
+          <div class="axis-row"><div class="axis-dot" style="background:#e05050"></div><span>X &#8212; Right (+R)</span></div>
+          <div class="axis-row"><div class="axis-dot" style="background:#50c050"></div><span>Y &#8212; Up (+U)</span></div>
+          <div class="axis-row"><div class="axis-dot" style="background:#5080e0"></div><span>Z &#8212; Front (+F)</span></div>
+        </div>
+      </div>
+
+      <!-- 4. TRANSFORM -->
+      <div class="pblock ws-only">
+        <div class="phead" onclick="FORGE.toggleBlock(this)"><span>Transform</span><span class="parrow">&#9662;</span></div>
+        <div class="pbody">
+          <div class="prow"><span style="color:#e05050">X</span><input type="number" class="xyz-input" id="px" value="0" step="0.1" oninput="FORGE.applyTransform()"></div>
+          <div class="prow"><span style="color:#50c050">Y</span><input type="number" class="xyz-input" id="py" value="0" step="0.1" oninput="FORGE.applyTransform()"></div>
+          <div class="prow"><span style="color:#5080e0">Z</span><input type="number" class="xyz-input" id="pz" value="0" step="0.1" oninput="FORGE.applyTransform()"></div>
+        </div>
+      </div>
+
+      <!-- 5. ROTATION -->
+      <div class="pblock ws-only">
+        <div class="phead" onclick="FORGE.toggleBlock(this)"><span>Rotation</span><span class="parrow">&#9662;</span></div>
+        <div class="pbody">
+          <div class="prow"><span style="color:#e05050">X&deg;</span><input type="number" class="xyz-input" id="rx" value="0" step="1" oninput="FORGE.applyRotation()"></div>
+          <div class="prow"><span style="color:#50c050">Y&deg;</span><input type="number" class="xyz-input" id="ry" value="0" step="1" oninput="FORGE.applyRotation()"></div>
+          <div class="prow"><span style="color:#5080e0">Z&deg;</span><input type="number" class="xyz-input" id="rz" value="0" step="1" oninput="FORGE.applyRotation()"></div>
+        </div>
+      </div>
+
+      <!-- 6. SCALE -->
+      <div class="pblock ws-only">
+        <div class="phead" onclick="FORGE.toggleBlock(this)"><span>Scale</span><span class="parrow">&#9662;</span></div>
+        <div class="pbody">
+          <div class="prow"><span style="color:#e05050">X</span><input type="number" class="xyz-input" id="sx" value="1" step="0.1" min="0.01" oninput="FORGE.applyScale()"></div>
+          <div class="prow"><span style="color:#50c050">Y</span><input type="number" class="xyz-input" id="sy" value="1" step="0.1" min="0.01" oninput="FORGE.applyScale()"></div>
+          <div class="prow"><span style="color:#5080e0">Z</span><input type="number" class="xyz-input" id="sz" value="1" step="0.1" min="0.01" oninput="FORGE.applyScale()"></div>
+        </div>
+      </div>
+
+      <!-- 7. RENDER -->
+      <div class="pblock ws-only">
+        <div class="phead" onclick="FORGE.toggleBlock(this)"><span>Render</span><span class="parrow">&#9662;</span></div>
+        <div class="pbody">
+          <div class="trow"><span class="tlabel">Wireframe</span><button class="tpill" id="tog-wire" onclick="FORGE.toggleWire(this)"></button></div>
+          <div class="trow"><span class="tlabel">Shadows</span><button class="tpill" id="tog-shadow" onclick="FORGE.toggleShadow(this)"></button></div>
+          <div class="prow" style="margin-top:4px">
+            <span>Background</span>
+            <input type="color" id="bg-color" value="#1a1a1a" oninput="FORGE.setBgColor(this.value)"
+              style="width:36px;height:18px;border:1px solid var(--border);border-radius:2px;cursor:pointer;padding:1px;">
+          </div>
+          <button class="sbtn" style="margin-top:4px" onclick="FORGE.resetRender()"><span class="sicon">&#8634;</span>Reset Render</button>
+        </div>
+      </div>
+
+      <!-- 8. LIGHTS -->
+      <div class="pblock ws-only">
+        <div class="phead" onclick="FORGE.toggleBlock(this)"><span>Lights</span><span class="parrow">&#9662;</span></div>
+        <div class="pbody">
+          <div class="prow"><span>Ambient</span><input type="range" min="0" max="10" value="5" id="sl-ambient" oninput="FORGE.setAmbient(this.value)"></div>
+          <div class="prow"><span>Sun</span><input type="range" min="0" max="10" value="9" id="sl-sun" oninput="FORGE.setSun(this.value)"></div>
+          <div class="prow"><span>Sun X</span><input type="range" min="-10" max="10" value="6" id="sl-sun-x" oninput="FORGE.setSunPos()"></div>
+          <div class="prow"><span>Sun Y</span><input type="range" min="0" max="20" value="10" id="sl-sun-y" oninput="FORGE.setSunPos()"></div>
+          <button class="sbtn" style="margin-top:4px" onclick="FORGE.resetLights()"><span class="sicon">&#8634;</span>Reset Lights</button>
+        </div>
+      </div>
+
+      <div class="panel-spacer"></div>
+      <div class="panel-footer">
+        <span id="fps">&#8212; fps</span>
+        <span id="bb-pos">pos &#8212;</span>
+      </div>
+
+    </div>
+    <div class="panel-tab" onclick="FORGE.togglePanel()"></div>
+  </div>
+
+  <div id="viewport">
+    <canvas id="cv"></canvas>
+    <div id="vp-info" class="ws-only">
+      <div id="vp-pos">&#8212;</div>
+    </div>
+    <div id="vp-btns" class="ws-only">
+      <button class="vbtn" onclick="FORGE.setView('front')" title="Front">F</button>
+      <button class="vbtn" onclick="FORGE.setView('top')"   title="Top">T</button>
+      <button class="vbtn" onclick="FORGE.setView('right')" title="Right">R</button>
+      <button class="vbtn" onclick="FORGE.resetCamera()"    title="Reset">&#8962;</button>
+    </div>
+    <div id="sel-toolbar" style="display:none">
+      <button class="selt-btn" onclick="FORGE.startTool('g')" title="Move with mouse (G)">&#10021;</button>
+      <button class="selt-btn" onclick="FORGE.startTool('r')" title="Rotate with mouse (R)">&#10227;</button>
+      <button class="selt-btn" onclick="FORGE.startTool('s')" title="Scale with mouse (S)">&#10530;</button>
+      <span class="selt-sep"></span>
+      <span class="selt-label">Size</span>
+      <input type="range" id="selt-size" min="0.1" max="5" step="0.05" value="1"
+             title="Size" oninput="FORGE.setSelSize(this.value)">
+      <span class="selt-sep"></span>
+      <input type="color" id="selt-color" value="#4d9fff" title="Color"
+             oninput="FORGE.setSelColor(this.value)">
+      <select id="selt-shape" title="Change shape" onchange="FORGE.setSelShape(this.value)">
+        <option value="">Shape&#8230;</option>
+        <option value="box">Box</option>
+        <option value="sphere">Sphere</option>
+        <option value="cylinder">Cylinder</option>
+        <option value="cone">Cone</option>
+        <option value="plane">Plane</option>
+        <option value="torus">Torus</option>
+      </select>
+    </div>
+    <svg id="gizmo" class="ws-only" viewBox="0 0 76 76">
+      <circle cx="38" cy="38" r="36" fill="rgba(0,0,0,.4)" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+      <line id="gz-x" x1="38" y1="38" x2="64" y2="50" stroke="#e05050" stroke-width="2" stroke-linecap="round"/>
+      <line id="gz-y" x1="38" y1="38" x2="38" y2="10" stroke="#50c050" stroke-width="2" stroke-linecap="round"/>
+      <line id="gz-z" x1="38" y1="38" x2="12" y2="50" stroke="#5080e0" stroke-width="2" stroke-linecap="round"/>
+      <circle id="gz-xc" cx="64" cy="50" r="5.5" fill="#e05050"/>
+      <circle id="gz-yc" cx="38" cy="10" r="5.5" fill="#50c050"/>
+      <circle id="gz-zc" cx="12" cy="50" r="5.5" fill="#5080e0"/>
+      <text id="gz-xt" x="64" y="54" text-anchor="middle" font-size="6.5" font-family="monospace" font-weight="700" fill="white">X</text>
+      <text id="gz-yt" x="38" y="14" text-anchor="middle" font-size="6.5" font-family="monospace" font-weight="700" fill="white">Y</text>
+      <text id="gz-zt" x="12" y="54" text-anchor="middle" font-size="6.5" font-family="monospace" font-weight="700" fill="white">Z</text>
+    </svg>
+  </div>
+
+</div>
+
+<div id="mode-content" style="display:none;flex:1;overflow:auto;"></div>
+
+<div id="local-notice" class="mode-popup" style="display:none">
+  <div class="mode-popup-inner">
+    <div class="mode-popup-title" id="local-notice-title"></div>
+    <p class="mode-notice-text" id="local-notice-text"></p>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="forge-btn" onclick="FORGE.closeLocalNotice()">Got it</button>
+    </div>
+  </div>
+</div>
+
+<div id="mode-popup" class="mode-popup" style="display:none">
+  <div class="mode-popup-inner">
+    <div class="mode-popup-title">New Mode</div>
+    <input id="mode-name-input" class="forge-input" placeholder="ModeName" spellcheck="false"/>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="forge-btn" onclick="FORGE.createMode()">Create</button>
+      <button class="forge-btn-cancel" onclick="FORGE.closeModePopup()">Cancel</button>
+    </div>
+    <div id="mode-popup-error" class="obj-popup-error"></div>
+  </div>
+</div>
+
+<script src="../static/JS/three.min.js"></script>
+<script src="../static/JS/Forge.js"></script>
+<!-- __MODES__ -->
+<!-- __OBJECTS__ -->
+</body>
+</html>
